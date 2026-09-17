@@ -6,12 +6,17 @@
     <title>Gestor de Tareas</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Fuentes elegantes cargadas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
@@ -45,7 +50,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.40);
+            background: rgba(0, 0, 0, 0.42);
             z-index: 1;
         }
 
@@ -54,49 +59,69 @@
             z-index: 2;
             max-width: 600px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 35px 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
             border: 1px solid rgba(255,255,255,0.2);
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 2rem;
+            margin-bottom: 25px;
+            font-size: 2.2rem;
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            letter-spacing: 1px;
         }
 
         .input-group {
             display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .fila {
+            display: flex;
             gap: 10px;
-            margin-bottom: 25px;
         }
 
         input {
             flex: 1;
-            padding: 12px 15px;
+            padding: 14px 18px;
             border: none;
-            border-radius: 10px;
+            border-radius: 16px;
             font-size: 1rem;
+            font-family: 'Quicksand', sans-serif;
             background: rgba(255,255,255,0.9);
             color: #222;
+            outline: none;
+            transition: transform 0.2s ease;
+        }
+
+        input:focus {
+            transform: scale(1.02);
         }
 
         button {
-            padding: 12px 20px;
+            padding: 14px 22px;
             border: none;
-            border-radius: 10px;
-            background: #1e90ff;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #1e90ff, #4169e1);
             color: white;
             font-size: 1rem;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         button:hover {
-            background: #0073e6;
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(30, 144, 255, 0.4);
         }
 
         ul {
@@ -104,46 +129,69 @@
         }
 
         li {
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.92);
             color: #222;
-            margin-bottom: 12px;
-            padding: 15px;
-            border-radius: 12px;
+            margin-bottom: 14px;
+            padding: 18px;
+            border-radius: 18px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
             animation: aparecer 0.4s ease;
         }
 
+        .tarea-texto {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        .tarea-fecha {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem;
+            color: #555;
+            font-style: italic;
+        }
+
+        .tarea-botones {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
         @keyframes aparecer {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .borrar {
-            background: #ff4d4d;
-            padding: 8px 12px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            padding: 10px 16px;
             font-size: 0.9rem;
         }
 
         .borrar:hover {
-            background: #cc0000;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
         }
 
         .estado {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 18px;
             font-size: 0.9rem;
-            opacity: 0.8;
+            font-family: 'Quicksand', sans-serif;
+            opacity: 0.85;
         }
 
         footer {
             position: relative;
             z-index: 2;
             text-align: center;
-            margin-top: 30px;
-            font-size: 0.85rem;
+            margin-top: 35px;
+            font-size: 0.9rem;
+            font-family: 'Playfair Display', serif;
             opacity: 0.7;
+            font-style: italic;
         }
     </style>
 </head>
@@ -160,12 +208,16 @@
 
         <div class="input-group">
             <input type="text" id="tareaInput" placeholder="Escribe una tarea...">
-            <button id="agregarBtn">Agregar</button>
+            <div class="fila">
+                <input type="date" id="fechaInput">
+                <input type="time" id="horaInput">
+            </div>
+            <button id="agregarBtn">Agregar Tarea</button>
         </div>
 
         <ul id="listaTareas"></ul>
 
-        <p class="estado" id="estadoSincro">🔄 Sincronizando...</p>
+        <p class="estado" id="estadoSincro">⚠️ Configurando...</p>
     </div>
 
     <footer>
@@ -183,28 +235,35 @@
             appId: "PON_TU_APP_ID_AQUI"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        let db = null;
+        let userId = null;
 
-        const userId = localStorage.getItem('kev_user_id') || generarUserId();
-        localStorage.setItem('kev_user_id', userId);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            userId = localStorage.getItem('kev_user_id') || generarUserId();
+            localStorage.setItem('kev_user_id', userId);
+            document.getElementById('estadoSincro').textContent = '✅ Conectado';
+        } catch (error) {
+            document.getElementById('estadoSincro').textContent = '💾 Guardando localmente';
+        }
 
         const tareaInput = document.getElementById('tareaInput');
+        const fechaInput = document.getElementById('fechaInput');
+        const horaInput = document.getElementById('horaInput');
         const agregarBtn = document.getElementById('agregarBtn');
         const listaTareas = document.getElementById('listaTareas');
         const estadoSincro = document.getElementById('estadoSincro');
 
         let indice = 0;
         const pinturas = ['pintura1', 'pintura2', 'pintura3'];
+        const tiempos = [14000, 10000, 10000];
 
         function cambiarFondo() {
-            document.getElementById(pinturas[indice]).classList.remove('activa');
-            indice = (indice + 1) % pinturas.length;
+            pinturas.forEach(id => document.getElementById(id).classList.remove('activa'));
             document.getElementById(pinturas[indice]).classList.add('activa');
-            
-            // La Noche Estrellada dura 14 segundos, las demás 10 segundos
-            const tiempo = indice === 0 ? 14000 : 10000;
-            setTimeout(cambiarFondo, tiempo);
+            indice = (indice + 1) % pinturas.length;
+            setTimeout(cambiarFondo, tiempos[indice]);
         }
         setTimeout(cambiarFondo, 14000);
 
@@ -212,47 +271,94 @@
             return 'usuario-kev-' + Math.random().toString(36).substring(2, 10);
         }
 
-        function agregarTarea() {
+        function formatearFecha(fecha, hora) {
+            if (!fecha && !hora) return 'Sin fecha y hora';
+            let texto = '';
+            if (fecha) {
+                const f = new Date(fecha + 'T00:00:00');
+                texto += f.toLocaleDateString('es-ES', {day:'numeric', month:'long', year:'numeric'});
+            }
+            if (hora) texto += (fecha ? ' · ' : '') + hora;
+            return texto;
+        }
+
+        async function agregarTarea() {
             const texto = tareaInput.value.trim();
+            const fecha = fechaInput.value;
+            const hora = horaInput.value;
+
             if (!texto) { alert('Escribe una tarea primero'); return; }
 
-            db.collection('tareas').add({
+            const datos = {
                 texto: texto,
+                fechaLimite: fecha || null,
+                horaLimite: hora || null,
                 userId: userId,
                 fecha: new Date()
-            });
+            };
+
+            if (db) {
+                await db.collection('tareas').add(datos);
+                estadoSincro.textContent = '✅ Guardado y sincronizado';
+                setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 2000);
+            } else {
+                const locales = JSON.parse(localStorage.getItem('tareas_temp') || '[]');
+                locales.push({...datos, id: Date.now()});
+                localStorage.setItem('tareas_temp', JSON.stringify(locales));
+                cargarTareasLocales();
+                estadoSincro.textContent = '💾 Guardado localmente';
+            }
 
             tareaInput.value = '';
-            estadoSincro.textContent = '✅ Guardado y sincronizado';
-            setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 2000);
+            fechaInput.value = '';
+            horaInput.value = '';
         }
 
-        function eliminarTarea(id) {
-            db.collection('tareas').doc(id).delete();
-            estadoSincro.textContent = '🗑️ Eliminado y sincronizado';
-            setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 2000);
+        async function eliminarTarea(id, esLocal) {
+            if (!esLocal && db) {
+                await db.collection('tareas').doc(id).delete();
+                estadoSincro.textContent = '🗑️ Eliminado';
+                setTimeout(() => { estadoSincro.textContent = '✅ Actualizado'; }, 2000);
+            } else if (esLocal) {
+                let locales = JSON.parse(localStorage.getItem('tareas_temp') || '[]');
+                locales = locales.filter(t => t.id !== parseInt(id));
+                localStorage.setItem('tareas_temp', JSON.stringify(locales));
+                cargarTareasLocales();
+            }
         }
 
-        function mostrarTarea(doc) {
-            const tarea = doc.data();
+        function mostrarTarea(tarea, id, esLocal=false) {
             const li = document.createElement('li');
             li.innerHTML = `
-                <span>${tarea.texto}</span>
-                <button class="borrar">Eliminar</button>
+                <span class="tarea-texto">${tarea.texto}</span>
+                <span class="tarea-fecha">📅 ${formatearFecha(tarea.fechaLimite, tarea.horaLimite)}</span>
+                <div class="tarea-botones">
+                    <button class="borrar">Eliminar</button>
+                </div>
             `;
-            li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(doc.id));
+            li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(id, esLocal));
             listaTareas.appendChild(li);
         }
 
-        db.collection('tareas')
-            .where('userId', '==', userId)
-            .orderBy('fecha')
-            .onSnapshot(snapshot => {
-                listaTareas.innerHTML = '';
-                snapshot.forEach(doc => mostrarTarea(doc));
-                estadoSincro.textContent = '✅ Actualizado';
-                setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 3000);
-            });
+        function cargarTareasLocales() {
+            listaTareas.innerHTML = '';
+            const locales = JSON.parse(localStorage.getItem('tareas_temp') || '[]');
+            locales.forEach(t => mostrarTarea(t, t.id, true));
+        }
+
+        if (db) {
+            db.collection('tareas')
+                .where('userId', '==', userId)
+                .orderBy('fecha')
+                .onSnapshot(snapshot => {
+                    listaTareas.innerHTML = '';
+                    snapshot.forEach(doc => mostrarTarea(doc.data(), doc.id));
+                    estadoSincro.textContent = '✅ Actualizado';
+                    setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 3000);
+                });
+        } else {
+            cargarTareasLocales();
+        }
 
         agregarBtn.addEventListener('click', agregarTarea);
         tareaInput.addEventListener('keypress', e => {
