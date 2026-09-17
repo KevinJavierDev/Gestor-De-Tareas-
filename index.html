@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mis Tareas - Kev</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        
+        body { 
+            background: linear-gradient(135deg, #e6f0fa 0%, #d4e2f2 100%); 
+            min-height: 100vh;
+            padding: 15px; 
+            max-width: 600px; 
+            margin: 0 auto; 
+        }
+
+        h1 { 
+            color: #1a365d; 
+            text-align: center; 
+            margin: 20px 0 30px; 
+            font-size: 24px;
+        }
+
+        .form-box { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            margin-bottom: 25px; 
+        }
+
+        input, button { 
+            padding: 14px; 
+            margin: 6px 0; 
+            border-radius: 10px; 
+            border: 1px solid #cbd5e0; 
+            font-size: 16px; 
+            width: 100%;
+        }
+
+        button { 
+            background: #2b6cb0; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s;
+        }
+
+        button:hover { background: #2c5282; transform: scale(1.02); }
+        button:active { transform: scale(0.98); }
+
+        .tarea { 
+            background: white; 
+            padding: 16px; 
+            margin: 10px 0; 
+            border-radius: 12px; 
+            border-left: 5px solid #38a169; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .tarea.urgente { border-left-color: #e53e3e; background: #fff5f5; }
+        .tarea.proxima { border-left-color: #ed8936; background: #fffaf0; }
+        .tarea.hecha { 
+            opacity: 0.6; 
+            text-decoration: line-through; 
+            border-left-color: #9e9e9e; 
+            background: #f7fafc;
+        }
+
+        .tarea-contenido { display: flex; flex-direction: column; gap: 8px; }
+        .tarea-acciones { display: flex; gap: 8px; margin-top: 10px; }
+        .tarea-acciones button { flex: 1; margin: 0; padding: 10px; font-size: 14px; }
+
+        .fecha { 
+            font-size: 14px; 
+            color: #718096; 
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .alerta { 
+            font-size: 13px; 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .alerta-urgente { background: #fed7d7; color: #c53030; }
+        .alerta-proxima { background: #feebc8; color: #c05621; }
+
+        .borrar { background: #e53e3e; }
+        .borrar:hover { background: #c53030; }
+        .hecha-btn { background: #38a169; }
+        .hecha-btn:hover { background: #2f855a; }
+
+        .vacio { text-align: center; padding: 40px 20px; color: #718096; }
+        
+        .aviso-alarma {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e53e3e;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: none;
+            text-align: center;
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alarmaSonido" class="aviso-alarma">
+        <strong>🔔 ¡TIENES UNA TAREA PRÓXIMA!</strong>
+        <p id="textoAlarma"></p>
+        <button onclick="cerrarAlarma()">Entendido ✅</button>
+    </div>
+
+    <h1>📋 Mis Tareas</h1>
+
+    <div class="form-box">
+        <input type="text" id="textoTarea" placeholder="¿Qué tienes que hacer? 📝">
+        <input type="date" id="fechaTarea">
+        <input type="number" id="diasAviso" placeholder="Avisar con cuántos días de anticipación" min="0" max="30" value="1">
+        <button onclick="agregarTarea()">➕ Agregar Tarea</button>
+    </div>
+
+    <div id="listaTareas"></div>
+
+<script>
+let tareas = JSON.parse(localStorage.getItem('tareas')) || [];
+let permisoNotificacion = false;
+
+// Pedir permiso para avisos
+if ('Notification' in window) {
+    Notification.requestPermission().then(p => {
+        permisoNotificacion = (p === 'granted');
+    });
+}
+
+function guardarEnLocal() {
+    localStorage.setItem('tareas', JSON.stringify(tareas));
+}
+
+function sonidoAlarma() {
+    // Sonido de alarma simple
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.frequency.value = 800;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + 0.5);
+}
+
+function mostrarAviso(tareaTexto) {
+    sonidoAlarma();
+    
+    // Aviso en pantalla
+    const aviso = document.getElementById('alarmaSonido');
+    document.getElementById('textoAlarma').innerText = tareaTexto;
+    aviso.style.display = 'block';
+    
+    // Notificación del sistema
+    if (permisoNotificacion) {
+        new Notification('🔔 ¡Tarea Próxima!', {
+            body: tareaTexto,
+            icon: '📋'
+        });
+    }
+}
+
+function cerrarAlarma() {
+    document.getElementById('alarmaSonido').style.display = 'none';
+}
+
+function calcularDiasRestantes(fechaEntrega) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const entrega = new Date(fechaEntrega);
+    entrega.setHours(0, 0, 0, 0);
+    const diferencia = entrega - hoy;
+    return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
+}
+
+function mostrarTareas() {
+    const lista = document.getElementById('listaTareas');
+    lista.innerHTML = '';
+    
+    if (tareas.length === 0) {
+        lista.innerHTML = '<p class="vacio">🎉 No tienes tareas pendientes. ¡Todo limpio!</p>';
+        return;
+    }
+    
+    tareas.forEach((t, i) => {
+        const diasRestantes = calcularDiasRestantes(t.fecha);
+        let claseEstado = '';
+        let aviso = '';
+        
+        if (!t.hecha) {
+            if (diasRestantes <= 0) {
+                claseEstado = 'urgente';
+                aviso = '<span class="alerta alerta-urgente">⚠️ ¡Vence hoy o ya venció!</span>';
+            } else if (diasRestantes <= t.diasAviso) {
+                claseEstado = 'proxima';
+                aviso = `<span class="alerta alerta-proxima">🕐 Faltan ${diasRestantes} día(s)</span>`;
+            }
+        } else {
+            claseEstado = 'hecha';
+        }
+        
+        lista.innerHTML += `
+            <div class="tarea ${claseEstado}">
+                <div class="tarea-contenido">
+                    <strong>${t.texto}</strong>
+                    <span class="fecha">📅 Entrega: ${t.fecha}</span>
+                    ${aviso}
+                </div>
+                <div class="tarea-acciones">
+                    <button class="hecha-btn" onclick="marcarHecha(${i})">
+                        ${t.hecha ? '↩️ Deshacer' : '✅ Hecha'}
+                    </button>
+                    <button class="borrar" onclick="borrarTarea(${i})">🗑️ Eliminar</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function agregarTarea() {
+    const texto = document.getElementById('textoTarea').value.trim();
+    const fecha = document.getElementById('fechaTarea').value;
+    const diasAviso = parseInt(document.getElementById('diasAviso').value) || 1;
+    
+    if (!texto) { alert('✍️ Escribe la tarea primero'); return; }
+    if (!fecha) { alert('📅 Pon la fecha de entrega'); return; }
+    
+    tareas.push({ texto, fecha, diasAviso, hecha: false, yaAvisada: false });
+    document.getElementById('textoTarea').value = '';
+    document.getElementById('fechaTarea').value = '';
+    guardarEnLocal();
+    mostrarTareas();
+}
+
+function marcarHecha(i) {
+    tareas[i].hecha = !tareas[i].hecha;
+    if (tareas[i].hecha) tareas[i].yaAvisada = true;
+    guardarEnLocal();
+    mostrarTareas();
+}
+
+function borrarTarea(i) {
+    if (confirm('¿Borrar esta tarea? 🥺')) {
+        tareas.splice(i, 1);
+        guardarEnLocal();
+        mostrarTareas();
+    }
+}
+
+// Revisar alarmas cada minuto
+function revisarAlarmas() {
+    tareas.forEach((t, i) => {
+        if (t.hecha || t.yaAvisada) return;
+        
+        const diasRestantes = calcularDiasRestantes(t.fecha);
+        if (diasRestantes <= t.diasAviso) {
+            mostrarAviso(`"${t.texto}" vence pronto!`);
+            tareas[i].yaAvisada = true;
+            guardarEnLocal();
+        }
+    });
+    mostrarTareas();
+}
+
+mostrarTareas();
+revisarAlarmas();
+setInterval(revisarAlarmas, 60000); // Revisar cada minuto
+</script>
+
+</body>
+</html>
