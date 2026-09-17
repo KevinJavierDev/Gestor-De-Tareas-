@@ -1,296 +1,264 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-<meta name="theme-color" content="#2b6cb0">
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mis Tareas - Kev</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Tareas</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        
-        body { 
-            background: linear-gradient(135deg, #e6f0fa 0%, #d4e2f2 100%); 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
             min-height: 100vh;
-            padding: 15px; 
-            max-width: 600px; 
-            margin: 0 auto; 
-        }
-
-        h1 { 
-            color: #1a365d; 
-            text-align: center; 
-            margin: 20px 0 30px; 
-            font-size: 24px;
-        }
-
-        .form-box { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-            margin-bottom: 25px; 
-        }
-
-        input, button { 
-            padding: 14px; 
-            margin: 6px 0; 
-            border-radius: 10px; 
-            border: 1px solid #cbd5e0; 
-            font-size: 16px; 
-            width: 100%;
-        }
-
-        button { 
-            background: #2b6cb0; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.2s;
-        }
-
-        button:hover { background: #2c5282; transform: scale(1.02); }
-        button:active { transform: scale(0.98); }
-
-        .tarea { 
-            background: white; 
-            padding: 16px; 
-            margin: 10px 0; 
-            border-radius: 12px; 
-            border-left: 5px solid #38a169; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .tarea.urgente { border-left-color: #e53e3e; background: #fff5f5; }
-        .tarea.proxima { border-left-color: #ed8936; background: #fffaf0; }
-        .tarea.hecha { 
-            opacity: 0.6; 
-            text-decoration: line-through; 
-            border-left-color: #9e9e9e; 
-            background: #f7fafc;
-        }
-
-        .tarea-contenido { display: flex; flex-direction: column; gap: 8px; }
-        .tarea-acciones { display: flex; gap: 8px; margin-top: 10px; }
-        .tarea-acciones button { flex: 1; margin: 0; padding: 10px; font-size: 14px; }
-
-        .fecha { 
-            font-size: 14px; 
-            color: #718096; 
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .alerta { 
-            font-size: 13px; 
-            padding: 4px 8px; 
-            border-radius: 6px; 
-            display: inline-block;
-            margin-top: 5px;
-        }
-        .alerta-urgente { background: #fed7d7; color: #c53030; }
-        .alerta-proxima { background: #feebc8; color: #c05621; }
-
-        .borrar { background: #e53e3e; }
-        .borrar:hover { background: #c53030; }
-        .hecha-btn { background: #38a169; }
-        .hecha-btn:hover { background: #2f855a; }
-
-        .vacio { text-align: center; padding: 40px 20px; color: #718096; }
-        
-        .aviso-alarma {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #e53e3e;
             color: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            z-index: 9999;
-            display: none;
+            padding: 20px;
+            position: relative;
+        }
+
+        .fondo-pintura {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            transition: opacity 3s ease-in-out;
+            opacity: 0;
+        }
+
+        .fondo-pintura.activa {
+            opacity: 1;
+        }
+
+        .capa-lectura {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.40);
+            z-index: 1;
+        }
+
+        .app {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        h1 {
             text-align: center;
-            max-width: 90%;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
+            color: #222;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: #1e90ff;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #0073e6;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        li {
+            background: rgba(255,255,255,0.9);
+            color: #222;
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: aparecer 0.4s ease;
+        }
+
+        @keyframes aparecer {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .borrar {
+            background: #ff4d4d;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .borrar:hover {
+            background: #cc0000;
+        }
+
+        .estado {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        footer {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
 
-    <div id="alarmaSonido" class="aviso-alarma">
-        <strong>🔔 ¡TIENES UNA TAREA PRÓXIMA!</strong>
-        <p id="textoAlarma"></p>
-        <button onclick="cerrarAlarma()">Entendido ✅</button>
+    <div class="fondo-pintura activa" id="pintura1" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg');"></div>
+    <div class="fondo-pintura" id="pintura2" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Vincent_van_Gogh_-_De_sterrennacht_boven_de_rhone_-_Google_Art_Project.jpg/1280px-Vincent_van_Gogh_-_De_sterrennacht_boven_de_rhone_-_Google_Art_Project.jpg');"></div>
+    <div class="fondo-pintura" id="pintura3" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Vincent_van_Gogh_-_Starry_Night_Over_the_Rhone.jpg/1280px-Vincent_van_Gogh_-_Starry_Night_Over_the_Rhone.jpg');"></div>
+
+    <div class="capa-lectura"></div>
+
+    <div class="app">
+        <h1>Mis Tareas</h1>
+
+        <div class="input-group">
+            <input type="text" id="tareaInput" placeholder="Escribe una tarea...">
+            <button id="agregarBtn">Agregar</button>
+        </div>
+
+        <ul id="listaTareas"></ul>
+
+        <p class="estado" id="estadoSincro">🔄 Sincronizando...</p>
     </div>
 
-    <h1>📋 Mis Tareas</h1>
+    <footer>
+        Van Gogh · La Noche Estrellada
+    </footer>
 
-    <div class="form-box">
-        <input type="text" id="textoTarea" placeholder="¿Qué tienes que hacer? 📝">
-        <input type="date" id="fechaTarea">
-        <input type="number" id="diasAviso" placeholder="Avisar con cuántos días de anticipación" min="0" max="30" value="1">
-        <button onclick="agregarTarea()">➕ Agregar Tarea</button>
-    </div>
+    <script>
+        // 👇 PON TUS DATOS DE FIREBASE AQUÍ CUANDO LOS TENGAS
+        const firebaseConfig = {
+            apiKey: "PON_TU_API_KEY_AQUI",
+            authDomain: "PON_TU_AUTH_DOMAIN_AQUI",
+            projectId: "PON_TU_PROJECT_ID_AQUI",
+            storageBucket: "PON_TU_STORAGE_BUCKET_AQUI",
+            messagingSenderId: "PON_TU_MESSAGING_SENDER_ID_AQUI",
+            appId: "PON_TU_APP_ID_AQUI"
+        };
 
-    <div id="listaTareas"></div>
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-<script>
-let tareas = JSON.parse(localStorage.getItem('tareas')) || [];
-let permisoNotificacion = false;
+        const userId = localStorage.getItem('kev_user_id') || generarUserId();
+        localStorage.setItem('kev_user_id', userId);
 
-// Pedir permiso para avisos
-if ('Notification' in window) {
-    Notification.requestPermission().then(p => {
-        permisoNotificacion = (p === 'granted');
-    });
-}
+        const tareaInput = document.getElementById('tareaInput');
+        const agregarBtn = document.getElementById('agregarBtn');
+        const listaTareas = document.getElementById('listaTareas');
+        const estadoSincro = document.getElementById('estadoSincro');
 
-function guardarEnLocal() {
-    localStorage.setItem('tareas', JSON.stringify(tareas));
-}
+        let indice = 0;
+        const pinturas = ['pintura1', 'pintura2', 'pintura3'];
 
-function sonidoAlarma() {
-    // Sonido de alarma simple
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.frequency.value = 800;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-    osc.start(audioContext.currentTime);
-    osc.stop(audioContext.currentTime + 0.5);
-}
+        function cambiarFondo() {
+            document.getElementById(pinturas[indice]).classList.remove('activa');
+            indice = (indice + 1) % pinturas.length;
+            document.getElementById(pinturas[indice]).classList.add('activa');
+            
+            // La Noche Estrellada dura 14 segundos, las demás 10 segundos
+            const tiempo = indice === 0 ? 14000 : 10000;
+            setTimeout(cambiarFondo, tiempo);
+        }
+        setTimeout(cambiarFondo, 14000);
 
-function mostrarAviso(tareaTexto) {
-    sonidoAlarma();
-    
-    // Aviso en pantalla
-    const aviso = document.getElementById('alarmaSonido');
-    document.getElementById('textoAlarma').innerText = tareaTexto;
-    aviso.style.display = 'block';
-    
-    // Notificación del sistema
-    if (permisoNotificacion) {
-        new Notification('🔔 ¡Tarea Próxima!', {
-            body: tareaTexto,
-            icon: '📋'
+        function generarUserId() {
+            return 'usuario-kev-' + Math.random().toString(36).substring(2, 10);
+        }
+
+        function agregarTarea() {
+            const texto = tareaInput.value.trim();
+            if (!texto) { alert('Escribe una tarea primero'); return; }
+
+            db.collection('tareas').add({
+                texto: texto,
+                userId: userId,
+                fecha: new Date()
+            });
+
+            tareaInput.value = '';
+            estadoSincro.textContent = '✅ Guardado y sincronizado';
+            setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 2000);
+        }
+
+        function eliminarTarea(id) {
+            db.collection('tareas').doc(id).delete();
+            estadoSincro.textContent = '🗑️ Eliminado y sincronizado';
+            setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 2000);
+        }
+
+        function mostrarTarea(doc) {
+            const tarea = doc.data();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${tarea.texto}</span>
+                <button class="borrar">Eliminar</button>
+            `;
+            li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(doc.id));
+            listaTareas.appendChild(li);
+        }
+
+        db.collection('tareas')
+            .where('userId', '==', userId)
+            .orderBy('fecha')
+            .onSnapshot(snapshot => {
+                listaTareas.innerHTML = '';
+                snapshot.forEach(doc => mostrarTarea(doc));
+                estadoSincro.textContent = '✅ Actualizado';
+                setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 3000);
+            });
+
+        agregarBtn.addEventListener('click', agregarTarea);
+        tareaInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') agregarTarea();
         });
-    }
-}
-
-function cerrarAlarma() {
-    document.getElementById('alarmaSonido').style.display = 'none';
-}
-
-function calcularDiasRestantes(fechaEntrega) {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const entrega = new Date(fechaEntrega);
-    entrega.setHours(0, 0, 0, 0);
-    const diferencia = entrega - hoy;
-    return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
-}
-
-function mostrarTareas() {
-    const lista = document.getElementById('listaTareas');
-    lista.innerHTML = '';
-    
-    if (tareas.length === 0) {
-        lista.innerHTML = '<p class="vacio">🎉 No tienes tareas pendientes. ¡Todo limpio!</p>';
-        return;
-    }
-    
-    tareas.forEach((t, i) => {
-        const diasRestantes = calcularDiasRestantes(t.fecha);
-        let claseEstado = '';
-        let aviso = '';
-        
-        if (!t.hecha) {
-            if (diasRestantes <= 0) {
-                claseEstado = 'urgente';
-                aviso = '<span class="alerta alerta-urgente">⚠️ ¡Vence hoy o ya venció!</span>';
-            } else if (diasRestantes <= t.diasAviso) {
-                claseEstado = 'proxima';
-                aviso = `<span class="alerta alerta-proxima">🕐 Faltan ${diasRestantes} día(s)</span>`;
-            }
-        } else {
-            claseEstado = 'hecha';
-        }
-        
-        lista.innerHTML += `
-            <div class="tarea ${claseEstado}">
-                <div class="tarea-contenido">
-                    <strong>${t.texto}</strong>
-                    <span class="fecha">📅 Entrega: ${t.fecha}</span>
-                    ${aviso}
-                </div>
-                <div class="tarea-acciones">
-                    <button class="hecha-btn" onclick="marcarHecha(${i})">
-                        ${t.hecha ? '↩️ Deshacer' : '✅ Hecha'}
-                    </button>
-                    <button class="borrar" onclick="borrarTarea(${i})">🗑️ Eliminar</button>
-                </div>
-            </div>
-        `;
-    });
-}
-
-function agregarTarea() {
-    const texto = document.getElementById('textoTarea').value.trim();
-    const fecha = document.getElementById('fechaTarea').value;
-    const diasAviso = parseInt(document.getElementById('diasAviso').value) || 1;
-    
-    if (!texto) { alert('✍️ Escribe la tarea primero'); return; }
-    if (!fecha) { alert('📅 Pon la fecha de entrega'); return; }
-    
-    tareas.push({ texto, fecha, diasAviso, hecha: false, yaAvisada: false });
-    document.getElementById('textoTarea').value = '';
-    document.getElementById('fechaTarea').value = '';
-    guardarEnLocal();
-    mostrarTareas();
-}
-
-function marcarHecha(i) {
-    tareas[i].hecha = !tareas[i].hecha;
-    if (tareas[i].hecha) tareas[i].yaAvisada = true;
-    guardarEnLocal();
-    mostrarTareas();
-}
-
-function borrarTarea(i) {
-    if (confirm('¿Borrar esta tarea? 🥺')) {
-        tareas.splice(i, 1);
-        guardarEnLocal();
-        mostrarTareas();
-    }
-}
-
-// Revisar alarmas cada minuto
-function revisarAlarmas() {
-    tareas.forEach((t, i) => {
-        if (t.hecha || t.yaAvisada) return;
-        
-        const diasRestantes = calcularDiasRestantes(t.fecha);
-        if (diasRestantes <= t.diasAviso) {
-            mostrarAviso(`"${t.texto}" vence pronto!`);
-            tareas[i].yaAvisada = true;
-            guardarEnLocal();
-        }
-    });
-    mostrarTareas();
-}
-
-mostrarTareas();
-revisarAlarmas();
-setInterval(revisarAlarmas, 60000); // Revisar cada minuto
-</script>
+    </script>
 
 </body>
 </html>
