@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Tareas</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <title>Mis Tareas</title>
     
-    <!-- Fuentes elegantes cargadas -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
@@ -26,7 +23,7 @@
             position: relative;
         }
 
-        .fondo-pintura {
+        .fondo {
             position: fixed;
             top: 0;
             left: 0;
@@ -36,21 +33,21 @@
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
-            transition: opacity 3s ease-in-out;
             opacity: 0;
+            transition: opacity 3s ease-in-out;
         }
 
-        .fondo-pintura.activa {
+        .fondo.activa {
             opacity: 1;
         }
 
-        .capa-lectura {
+        .capa-oscura {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.42);
+            background: rgba(0, 0, 0, 0.45);
             z-index: 1;
         }
 
@@ -116,7 +113,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            white-space: nowrap;
         }
 
         button:hover {
@@ -140,11 +136,15 @@
             animation: aparecer 0.4s ease;
         }
 
+        @keyframes aparecer {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .tarea-texto {
             font-family: 'Quicksand', sans-serif;
             font-weight: 500;
             font-size: 1.05rem;
-            line-height: 1.5;
         }
 
         .tarea-fecha {
@@ -154,33 +154,15 @@
             font-style: italic;
         }
 
-        .tarea-botones {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-        }
-
-        @keyframes aparecer {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .borrar {
             background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
             padding: 10px 16px;
             font-size: 0.9rem;
+            align-self: flex-start;
         }
 
         .borrar:hover {
             box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
-        }
-
-        .estado {
-            text-align: center;
-            margin-top: 18px;
-            font-size: 0.9rem;
-            font-family: 'Quicksand', sans-serif;
-            opacity: 0.85;
         }
 
         footer {
@@ -197,11 +179,19 @@
 </head>
 <body>
 
-    <div class="fondo-pintura activa" id="pintura1" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg');"></div>
-    <div class="fondo-pintura" id="pintura2" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Vincent_van_Gogh_-_De_sterrennacht_boven_de_rhone_-_Google_Art_Project.jpg/1280px-Vincent_van_Gogh_-_De_sterrennacht_boven_de_rhone_-_Google_Art_Project.jpg');"></div>
-    <div class="fondo-pintura" id="pintura3" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Vincent_van_Gogh_-_Starry_Night_Over_the_Rhone.jpg/1280px-Vincent_van_Gogh_-_Starry_Night_Over_the_Rhone.jpg');"></div>
+    <!-- Fondo 1: La Noche Estrellada de Van Gogh - dura más tiempo -->
+    <div class="fondo activa" id="fondo1" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg');"></div>
+    
+    <!-- Fondo 2: Agujero negro -->
+    <div class="fondo" id="fondo2" style="background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"></div>
+    
+    <!-- Fondo 3: Nebulosa colorida -->
+    <div class="fondo" id="fondo3" style="background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"></div>
+    
+    <!-- Fondo 4: Noche estrellada cósmica -->
+    <div class="fondo" id="fondo4" style="background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"></div>
 
-    <div class="capa-lectura"></div>
+    <div class="capa-oscura"></div>
 
     <div class="app">
         <h1>Mis Tareas</h1>
@@ -216,59 +206,37 @@
         </div>
 
         <ul id="listaTareas"></ul>
-
-        <p class="estado" id="estadoSincro">⚠️ Configurando...</p>
     </div>
 
     <footer>
-        Van Gogh · La Noche Estrellada
+        Van Gogh · Universo · Estrellas
     </footer>
 
     <script>
-        // 👇 PON TUS DATOS DE FIREBASE AQUÍ CUANDO LOS TENGAS
-        const firebaseConfig = {
-            apiKey: "PON_TU_API_KEY_AQUI",
-            authDomain: "PON_TU_AUTH_DOMAIN_AQUI",
-            projectId: "PON_TU_PROJECT_ID_AQUI",
-            storageBucket: "PON_TU_STORAGE_BUCKET_AQUI",
-            messagingSenderId: "PON_TU_MESSAGING_SENDER_ID_AQUI",
-            appId: "PON_TU_APP_ID_AQUI"
-        };
-
-        let db = null;
-        let userId = null;
-
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            userId = localStorage.getItem('kev_user_id') || generarUserId();
-            localStorage.setItem('kev_user_id', userId);
-            document.getElementById('estadoSincro').textContent = '✅ Conectado';
-        } catch (error) {
-            document.getElementById('estadoSincro').textContent = '💾 Guardando localmente';
-        }
-
         const tareaInput = document.getElementById('tareaInput');
         const fechaInput = document.getElementById('fechaInput');
         const horaInput = document.getElementById('horaInput');
         const agregarBtn = document.getElementById('agregarBtn');
         const listaTareas = document.getElementById('listaTareas');
-        const estadoSincro = document.getElementById('estadoSincro');
 
+        // Cambio de fondos
+        const fondos = ['fondo1', 'fondo2', 'fondo3', 'fondo4'];
+        const tiempos = [14000, 10000, 10000, 10000]; // Van Gogh = 14s
         let indice = 0;
-        const pinturas = ['pintura1', 'pintura2', 'pintura3'];
-        const tiempos = [14000, 10000, 10000];
 
         function cambiarFondo() {
-            pinturas.forEach(id => document.getElementById(id).classList.remove('activa'));
-            document.getElementById(pinturas[indice]).classList.add('activa');
-            indice = (indice + 1) % pinturas.length;
+            fondos.forEach(id => document.getElementById(id).classList.remove('activa'));
+            document.getElementById(fondos[indice]).classList.add('activa');
+            indice = (indice + 1) % fondos.length;
             setTimeout(cambiarFondo, tiempos[indice]);
         }
         setTimeout(cambiarFondo, 14000);
 
-        function generarUserId() {
-            return 'usuario-kev-' + Math.random().toString(36).substring(2, 10);
+        // Guardar tareas solo en tu dispositivo
+        function cargarTareas() {
+            const guardadas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
+            listaTareas.innerHTML = '';
+            guardadas.forEach(t => mostrarTarea(t));
         }
 
         function formatearFecha(fecha, hora) {
@@ -282,88 +250,55 @@
             return texto;
         }
 
-        async function agregarTarea() {
+        function mostrarTarea(tarea) {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="tarea-texto">${tarea.texto}</span>
+                <span class="tarea-fecha">📅 ${formatearFecha(tarea.fecha, tarea.hora)}</span>
+                <button class="borrar">Eliminar</button>
+            `;
+            li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(tarea.id));
+            listaTareas.appendChild(li);
+        }
+
+        function agregarTarea() {
             const texto = tareaInput.value.trim();
             const fecha = fechaInput.value;
             const hora = horaInput.value;
 
             if (!texto) { alert('Escribe una tarea primero'); return; }
 
-            const datos = {
+            const tarea = {
+                id: Date.now(),
                 texto: texto,
-                fechaLimite: fecha || null,
-                horaLimite: hora || null,
-                userId: userId,
-                fecha: new Date()
+                fecha: fecha,
+                hora: hora
             };
 
-            if (db) {
-                await db.collection('tareas').add(datos);
-                estadoSincro.textContent = '✅ Guardado y sincronizado';
-                setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 2000);
-            } else {
-                const locales = JSON.parse(localStorage.getItem('tareas_temp') || '[]');
-                locales.push({...datos, id: Date.now()});
-                localStorage.setItem('tareas_temp', JSON.stringify(locales));
-                cargarTareasLocales();
-                estadoSincro.textContent = '💾 Guardado localmente';
-            }
+            const tareas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
+            tareas.push(tarea);
+            localStorage.setItem('mis_tareas', JSON.stringify(tareas));
 
             tareaInput.value = '';
             fechaInput.value = '';
             horaInput.value = '';
+
+            cargarTareas();
         }
 
-        async function eliminarTarea(id, esLocal) {
-            if (!esLocal && db) {
-                await db.collection('tareas').doc(id).delete();
-                estadoSincro.textContent = '🗑️ Eliminado';
-                setTimeout(() => { estadoSincro.textContent = '✅ Actualizado'; }, 2000);
-            } else if (esLocal) {
-                let locales = JSON.parse(localStorage.getItem('tareas_temp') || '[]');
-                locales = locales.filter(t => t.id !== parseInt(id));
-                localStorage.setItem('tareas_temp', JSON.stringify(locales));
-                cargarTareasLocales();
-            }
-        }
-
-        function mostrarTarea(tarea, id, esLocal=false) {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span class="tarea-texto">${tarea.texto}</span>
-                <span class="tarea-fecha">📅 ${formatearFecha(tarea.fechaLimite, tarea.horaLimite)}</span>
-                <div class="tarea-botones">
-                    <button class="borrar">Eliminar</button>
-                </div>
-            `;
-            li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(id, esLocal));
-            listaTareas.appendChild(li);
-        }
-
-        function cargarTareasLocales() {
-            listaTareas.innerHTML = '';
-            const locales = JSON.parse(localStorage.getItem('tareas_temp') || '[]');
-            locales.forEach(t => mostrarTarea(t, t.id, true));
-        }
-
-        if (db) {
-            db.collection('tareas')
-                .where('userId', '==', userId)
-                .orderBy('fecha')
-                .onSnapshot(snapshot => {
-                    listaTareas.innerHTML = '';
-                    snapshot.forEach(doc => mostrarTarea(doc.data(), doc.id));
-                    estadoSincro.textContent = '✅ Actualizado';
-                    setTimeout(() => { estadoSincro.textContent = '🔄 Sincronizando...'; }, 3000);
-                });
-        } else {
-            cargarTareasLocales();
+        function eliminarTarea(id) {
+            let tareas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
+            tareas = tareas.filter(t => t.id !== id);
+            localStorage.setItem('mis_tareas', JSON.stringify(tareas));
+            cargarTareas();
         }
 
         agregarBtn.addEventListener('click', agregarTarea);
         tareaInput.addEventListener('keypress', e => {
             if (e.key === 'Enter') agregarTarea();
         });
+
+        cargarTareas();
     </script>
 
 </body>
