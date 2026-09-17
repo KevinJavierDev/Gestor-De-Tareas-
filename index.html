@@ -66,11 +66,21 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 10px;
             font-size: 2.2rem;
             font-family: 'Playfair Display', serif;
             font-weight: 600;
             letter-spacing: 1px;
+        }
+
+        .frase {
+            text-align: center;
+            margin-bottom: 25px;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1rem;
+            opacity: 0.85;
+            line-height: 1.6;
         }
 
         .input-group {
@@ -136,9 +146,31 @@
             animation: aparecer 0.4s ease;
         }
 
+        li.aviso-dia {
+            box-shadow: 0 0 15px 2px #9b59b6;
+            border: 2px solid #9b59b6;
+        }
+
+        li.aviso-hora {
+            box-shadow: 0 0 15px 2px #f39c12;
+            border: 2px solid #f39c12;
+        }
+
+        li.aviso-entrega {
+            box-shadow: 0 0 20px 4px #e74c3c;
+            border: 3px solid #e74c3c;
+            animation: pulsar 1s infinite;
+        }
+
         @keyframes aparecer {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulsar {
+            0% { box-shadow: 0 0 20px 4px #e74c3c; }
+            50% { box-shadow: 0 0 30px 8px #e74c3c; }
+            100% { box-shadow: 0 0 20px 4px #e74c3c; }
         }
 
         .tarea-texto {
@@ -152,6 +184,13 @@
             font-size: 0.9rem;
             color: #555;
             font-style: italic;
+        }
+
+        .mensaje-alerta {
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
         }
 
         .borrar {
@@ -179,22 +218,17 @@
 </head>
 <body>
 
-    <!-- Fondo 1: La Noche Estrellada de Van Gogh - dura más tiempo -->
     <div class="fondo activa" id="fondo1" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg');"></div>
-    
-    <!-- Fondo 2: Agujero negro -->
     <div class="fondo" id="fondo2" style="background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"></div>
-    
-    <!-- Fondo 3: Nebulosa colorida -->
     <div class="fondo" id="fondo3" style="background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"></div>
-    
-    <!-- Fondo 4: Noche estrellada cósmica -->
     <div class="fondo" id="fondo4" style="background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');"></div>
 
     <div class="capa-oscura"></div>
 
     <div class="app">
-        <h1>Mis Tareas</h1>
+        <h1>Mis Tareas 🔔</h1>
+        
+        <p class="frase">La grandeza no surge de la suerte, sino de la constancia de tu esfuerzo.</p>
 
         <div class="input-group">
             <input type="text" id="tareaInput" placeholder="Escribe una tarea...">
@@ -219,9 +253,9 @@
         const agregarBtn = document.getElementById('agregarBtn');
         const listaTareas = document.getElementById('listaTareas');
 
-        // Cambio de fondos
+        // Fondo cambiante
         const fondos = ['fondo1', 'fondo2', 'fondo3', 'fondo4'];
-        const tiempos = [14000, 10000, 10000, 10000]; // Van Gogh = 14s
+        const tiempos = [14000, 10000, 10000, 10000];
         let indice = 0;
 
         function cambiarFondo() {
@@ -232,11 +266,31 @@
         }
         setTimeout(cambiarFondo, 14000);
 
-        // Guardar tareas solo en tu dispositivo
-        function cargarTareas() {
-            const guardadas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
-            listaTareas.innerHTML = '';
-            guardadas.forEach(t => mostrarTarea(t));
+        // Sonido de alarma
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function hacerSonarAlarma(tipo) {
+            const patrones = {
+                dia: [392, 494, 587, 392, 494, 587],
+                hora: [523, 659, 523, 659, 523, 659],
+                entrega: [659, 784, 659, 784, 880, 784, 659, 784]
+            };
+            const notas = patrones[tipo] || patrones.entrega;
+            let tiempo = audioContext.currentTime;
+            
+            notas.forEach(frec => {
+                const osc = audioContext.createOscillator();
+                const gan = audioContext.createGain();
+                osc.connect(gan);
+                gan.connect(audioContext.destination);
+                osc.frequency.value = frec;
+                osc.type = 'sine';
+                gan.gain.setValueAtTime(0.3, tiempo);
+                gan.gain.exponentialRampToValueAtTime(0.01, tiempo + 0.35);
+                osc.start(tiempo);
+                osc.stop(tiempo + 0.35);
+                tiempo += 0.4;
+            });
         }
 
         function formatearFecha(fecha, hora) {
@@ -250,11 +304,51 @@
             return texto;
         }
 
+        function cargarTareas() {
+            const guardadas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
+            listaTareas.innerHTML = '';
+            guardadas.forEach(t => mostrarTarea(t));
+        }
+
         function mostrarTarea(tarea) {
+            if (!tarea.fecha || !tarea.hora) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="tarea-texto">${tarea.texto}</span>
+                    <span class="tarea-fecha">📅 Sin fecha de entrega</span>
+                    <button class="borrar">Eliminar</button>
+                `;
+                li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(tarea.id));
+                listaTareas.appendChild(li);
+                return;
+            }
+
+            const ahora = new Date();
+            const entrega = new Date(`${tarea.fecha}T${tarea.hora}`);
+            const unDiaAntes = new Date(entrega.getTime() - 24 * 60 * 60 * 1000);
+            const unaHoraAntes = new Date(entrega.getTime() - 60 * 60 * 1000);
+            const unMinutoAntes = new Date(entrega.getTime() - 60 * 1000);
+
+            let claseExtra = '';
+            let mensajeExtra = '';
+
+            if (ahora >= unMinutoAntes && !tarea.avisoEntrega) {
+                claseExtra = 'aviso-entrega';
+                mensajeExtra = `<span class="mensaje-alerta" style="background:#e74c3c; color:white;">⏰ ¡Es hora de entregar tu tarea!</span>`;
+            } else if (ahora >= unaHoraAntes && !tarea.avisoHora) {
+                claseExtra = 'aviso-hora';
+                mensajeExtra = `<span class="mensaje-alerta" style="background:#f39c12; color:black;">🕐 Falta 1 hora para la entrega</span>`;
+            } else if (ahora >= unDiaAntes && !tarea.avisoDia) {
+                claseExtra = 'aviso-dia';
+                mensajeExtra = `<span class="mensaje-alerta" style="background:#9b59b6; color:white;">📅 Falta 1 día para la entrega</span>`;
+            }
+
             const li = document.createElement('li');
+            if (claseExtra) li.classList.add(claseExtra);
             li.innerHTML = `
                 <span class="tarea-texto">${tarea.texto}</span>
-                <span class="tarea-fecha">📅 ${formatearFecha(tarea.fecha, tarea.hora)}</span>
+                <span class="tarea-fecha">📅 Entrega: ${formatearFecha(tarea.fecha, tarea.hora)}</span>
+                ${mensajeExtra}
                 <button class="borrar">Eliminar</button>
             `;
             li.querySelector('.borrar').addEventListener('click', () => eliminarTarea(tarea.id));
@@ -272,7 +366,10 @@
                 id: Date.now(),
                 texto: texto,
                 fecha: fecha,
-                hora: hora
+                hora: hora,
+                avisoDia: false,
+                avisoHora: false,
+                avisoEntrega: false
             };
 
             const tareas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
@@ -293,12 +390,50 @@
             cargarTareas();
         }
 
+        function revisarAlarmas() {
+            const tareas = JSON.parse(localStorage.getItem('mis_tareas') || '[]');
+            const ahora = new Date();
+            let huboCambio = false;
+
+            const tareasActualizadas = tareas.map(t => {
+                if (!t.fecha || !t.hora) return t;
+
+                const entrega = new Date(`${t.fecha}T${t.hora}`);
+                const unDiaAntes = new Date(entrega.getTime() - 24 * 60 * 60 * 1000);
+                const unaHoraAntes = new Date(entrega.getTime() - 60 * 60 * 1000);
+                const unMinutoAntes = new Date(entrega.getTime() - 60 * 1000);
+
+                if (ahora >= unDiaAntes && !t.avisoDia) {
+                    hacerSonarAlarma('dia');
+                    huboCambio = true;
+                    return {...t, avisoDia: true};
+                }
+                if (ahora >= unaHoraAntes && !t.avisoHora) {
+                    hacerSonarAlarma('hora');
+                    huboCambio = true;
+                    return {...t, avisoHora: true};
+                }
+                if (ahora >= unMinutoAntes && !t.avisoEntrega) {
+                    hacerSonarAlarma('entrega');
+                    huboCambio = true;
+                    return {...t, avisoEntrega: true};
+                }
+                return t;
+            });
+
+            if (huboCambio) {
+                localStorage.setItem('mis_tareas', JSON.stringify(tareasActualizadas));
+                cargarTareas();
+            }
+        }
+
         agregarBtn.addEventListener('click', agregarTarea);
         tareaInput.addEventListener('keypress', e => {
             if (e.key === 'Enter') agregarTarea();
         });
 
         cargarTareas();
+        setInterval(revisarAlarmas, 1000);
     </script>
 
 </body>
